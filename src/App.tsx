@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { SanctuaryProvider } from './context/SanctuaryContext';
-import Layout from './components/layout/Layout';
+import { Layout } from './components/layout/Layout';
 import Dashboard from './pages/dashboard/Dashboard';
 import MoodTracker from './pages/dashboard/MoodTracker';
 import GoalCoach from './pages/dashboard/GoalCoach';

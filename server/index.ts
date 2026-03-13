@@ -1,47 +1,74 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
-import moodRoutes from './routes/moods';
-import goalRoutes from './routes/goals';
-import memoryRoutes from './routes/memories';
-import aiRoutes from './routes/ai';
-import crisisRoutes from './routes/crisis';
-import analyticsRoutes from './routes/analytics';
-
 dotenv.config();
 
+import express, { type Request, Response, NextFunction } from 'express';
+import { registerRoutes } from './routes';
+import { setupVite, serveStatic, log } from './vite';
+
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// Health check
-app.get('/health', (req, res) => {
+// Logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson: any) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, arguments as any);
+  };
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (path.startsWith('/api')) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + '…';
+      }
+      log(logLine);
+    }
+  });
+
+  next();
+});
+
+// Health check endpoint
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Protected routes
-app.use('/api/moods', ClerkExpressRequireAuth(), moodRoutes);
-app.use('/api/goals', ClerkExpressRequireAuth(), goalRoutes);
-app.use('/api/memories', ClerkExpressRequireAuth(), memoryRoutes);
-app.use('/api/ai', ClerkExpressRequireAuth(), aiRoutes);
-app.use('/api/crisis', ClerkExpressRequireAuth(), crisisRoutes);
-app.use('/api/analytics', ClerkExpressRequireAuth(), analyticsRoutes);
+// Register API routes
+(async () => {
+  const server = await registerRoutes(app);
 
-// Error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+  // Error handling middleware - MUST be last
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || 'Internal Server Error';
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  // Setup Vite in development or serve static in production
+  if (app.get('env') === 'development') {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  // Start server
+  const PORT = parseInt(process.env.PORT || '3001', 10);
+  server.listen(PORT, '0.0.0.0', () => {
+    log(`Server running on port ${PORT}`);
+  });
+})();
+

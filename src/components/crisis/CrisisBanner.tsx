@@ -3,7 +3,7 @@ import { AlertTriangle, X } from 'lucide-react';
 import { useState } from 'react';
 
 export function CrisisBanner() {
-  const { crisisMode, setCrisisMode } = useSanctuary();
+  const { crisisMode } = useSanctuary();
   const [dismissed, setDismissed] = useState(false);
 
   if (!crisisMode || dismissed) return null;

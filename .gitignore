@@ -1,13 +1,38 @@
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
-.env
-.env.local
+dist-ssr/
 *.local
-.DS_Store
+
+# Capacitor native builds (keep config, ignore build artifacts)
 ios/App/build/
 ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
 ios/App/DerivedData/
 android/app/build/
 android/.gradle/
+android/local.properties
 android/.idea/
-drizzle/*.sql
+android/captures/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db

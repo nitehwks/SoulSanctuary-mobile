@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Brain } from 'lucide-react';
 
 export default function MoodTracker() {
-  const { getMoodInsight, loading } = useAI();
+  const { getMoodInsight } = useAI();
   const [insight, setInsight] = useState<string>('');
 
   useEffect(() => {

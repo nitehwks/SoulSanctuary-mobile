@@ -1,12 +1,10 @@
 import { useEffect } from 'react';
 import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
 import { useGoals } from '../../hooks/useGoals';
 import { Target, CheckCircle2, Circle } from 'lucide-react';
 
 export function GoalList() {
-  const { goals, fetchGoals, updateProgress } = useGoals();
-
+  const { goals, fetchGoals } = useGoals();
   useEffect(() => {
     fetchGoals();
   }, []);

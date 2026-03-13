@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+.DS_Store
+ios/App/build/
+ios/App/Pods/
+ios/App/DerivedData/
+android/app/build/
+android/.gradle/
+android/.idea/
+drizzle/*.sql

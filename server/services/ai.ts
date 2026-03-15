@@ -13,8 +13,10 @@ const openai = new OpenAI({
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
 const FALLBACK_MODEL = process.env.OPENROUTER_FALLBACK_MODEL || 'openai/gpt-4o-mini';
 
-// Check if API key is configured
-const hasValidApiKey = !!process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.startsWith('sk-');
+// Check if API key is configured (function to check at runtime)
+function hasValidApiKey(): boolean {
+  return !!process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.startsWith('sk-');
+}
 
 interface MoodEntry {
   mood: number;
@@ -42,7 +44,7 @@ interface Memory {
  * Helper to make API calls with timeout
  */
 async function callAIWithTimeout(messages: any[], model: string = DEFAULT_MODEL, timeoutMs: number = 15000): Promise<string | null> {
-  if (!hasValidApiKey) {
+  if (!hasValidApiKey()) {
     logWarn('No valid OpenRouter API key configured');
     return null;
   }
@@ -75,7 +77,7 @@ async function callAIWithTimeout(messages: any[], model: string = DEFAULT_MODEL,
  * Generate AI insight for mood entries
  */
 export async function generateMoodInsight(moodEntries: MoodEntry[]): Promise<string> {
-  if (!hasValidApiKey) {
+  if (!hasValidApiKey()) {
     return 'Tracking your moods helps you understand your emotional patterns. Keep it up!';
   }
 
@@ -106,7 +108,7 @@ export async function generateMoodInsight(moodEntries: MoodEntry[]): Promise<str
  * Generate AI coaching for a goal
  */
 export async function generateGoalCoaching(goal: Goal): Promise<string> {
-  if (!hasValidApiKey) {
+  if (!hasValidApiKey()) {
     return `Great progress on "${goal.title}"! Every step forward matters.`;
   }
 
@@ -216,7 +218,7 @@ export async function generateWeeklySummary(
   highlights: string[];
   suggestions: string[];
 }> {
-  if (!hasValidApiKey) {
+  if (!hasValidApiKey()) {
     return {
       summary: 'This week was part of your ongoing journey.',
       highlights: ['You took steps to care for your mental health'],
@@ -306,8 +308,8 @@ export async function generateChatResponse(
   mode: 'spiritual' | 'general' = 'spiritual'
 ): Promise<string> {
   // If no API key, return fallback response immediately
-  logInfo('Starting chat response generation', { hasValidApiKey });
-  if (!hasValidApiKey) {
+  logInfo('Starting chat response generation', { hasValidApiKey: hasValidApiKey() });
+  if (!hasValidApiKey()) {
     logWarn('No OpenRouter API key - using fallback response');
     return getFallbackResponse(mode);
   }
@@ -343,7 +345,7 @@ export async function generateSuggestions(
     general: ['Take a moment to rest', 'Practice gratitude', 'Do something kind for yourself']
   };
 
-  if (!hasValidApiKey) {
+  if (!hasValidApiKey()) {
     return fallbackSuggestions[context];
   }
 

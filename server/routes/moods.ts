@@ -5,7 +5,7 @@ import { eq, desc } from 'drizzle-orm';
 import { validateBody } from '../validation/middleware';
 import { createMoodSchema, updateMoodSchema } from '../validation/schemas';
 import { writeRateLimiter } from '../middleware/rateLimit';
-import { logAudit } from '../services/logger';
+import { logAudit, logError } from '../services/logger';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get('/', async (req: any, res) => {
 
     res.json(userMoods);
   } catch (error) {
-    console.error('Get moods error:', error);
+    logError('Get moods error', error as Error);
     res.status(500).json({ error: 'Failed to fetch moods' });
   }
 });
@@ -67,7 +67,7 @@ router.post(
 
       res.status(201).json(mood);
     } catch (error) {
-      console.error('Create mood error:', error);
+      logError('Create mood error', error as Error);
       res.status(500).json({ error: 'Failed to create mood entry' });
     }
   }
@@ -109,7 +109,7 @@ router.patch(
 
       res.json(mood);
     } catch (error) {
-      console.error('Update mood error:', error);
+      logError('Update mood error', error as Error);
       res.status(500).json({ error: 'Failed to update mood entry' });
     }
   }
@@ -138,7 +138,7 @@ router.delete('/:id', writeRateLimiter, async (req: any, res) => {
 
     res.status(204).send();
   } catch (error) {
-    console.error('Delete mood error:', error);
+    logError('Delete mood error', error as Error);
     res.status(500).json({ error: 'Failed to delete mood entry' });
   }
 });

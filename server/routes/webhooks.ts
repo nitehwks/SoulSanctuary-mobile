@@ -3,6 +3,7 @@ import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { Webhook } from 'svix';
+import { logError, logInfo, logWarn } from '../services/logger';
 
 const router = Router();
 
@@ -26,13 +27,13 @@ router.post('/clerk', async (req, res) => {
         'svix-signature': headers['svix-signature'] as string,
       });
     } catch (err) {
-      console.error('Webhook verification failed:', err);
+      logError('Webhook verification failed', err as Error);
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
     const { type, data } = event as any;
 
-    console.log(`Received Clerk webhook: ${type}`);
+    logInfo('Received Clerk webhook', { eventType: type });
 
     switch (type) {
       case 'user.created': {
@@ -44,7 +45,7 @@ router.post('/clerk', async (req, res) => {
           preferences: {},
         }).returning();
         
-        console.log(`Created user in database: ${user.id}`);
+        logInfo('Created user in database', { userId: user.id });
         break;
       }
 
@@ -62,7 +63,7 @@ router.post('/clerk', async (req, res) => {
             })
             .where(eq(users.id, user.id));
           
-          console.log(`Updated user in database: ${user.id}`);
+          logInfo('Updated user in database', { userId: user.id });
         }
         break;
       }
@@ -84,31 +85,31 @@ router.post('/clerk', async (req, res) => {
           // This requires cascading deletes for moods, goals, etc.
           // await db.delete(users).where(eq(users.id, user.id));
 
-          console.log(`User deletion requested: ${user.id} - handle according to data retention policy`);
+          logInfo('User deletion requested - handle according to data retention policy', { userId: user.id });
         }
         break;
       }
 
       case 'session.created': {
         // Could log login events for security monitoring
-        console.log(`User session created: ${data.user_id}`);
+        logInfo('User session created', { userId: data.user_id });
         break;
       }
 
       case 'session.revoked':
       case 'session.removed': {
         // Could handle logout events
-        console.log(`User session ended: ${data.user_id}`);
+        logInfo('User session ended', { userId: data.user_id });
         break;
       }
 
       default:
-        console.log(`Unhandled webhook event: ${type}`);
+        logWarn('Unhandled webhook event', { eventType: type });
     }
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    logError('Webhook processing error', error as Error);
     res.status(500).json({ error: 'Failed to process webhook' });
   }
 });

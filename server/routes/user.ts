@@ -3,6 +3,7 @@ import { db } from '../db';
 import { users, moods, goals, memories, crisisEvents, notifications, emergencyContacts, chatHistory, userSettings, milestones } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
+import { logError, logInfo } from '../services/logger';
 
 const router = Router();
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
@@ -39,7 +40,7 @@ router.post('/sync', async (req: any, res) => {
         preferences: {},
       }).returning();
       
-      console.log(`New user created: ${user.id} (Clerk: ${clerkId})`);
+      logInfo('New user created', { userId: user.id, clerkId });
     } else {
       // Update existing user with latest info
       [user] = await db.update(users)
@@ -50,7 +51,7 @@ router.post('/sync', async (req: any, res) => {
         .where(eq(users.id, user.id))
         .returning();
       
-      console.log(`User synced: ${user.id} (Clerk: ${clerkId})`);
+      logInfo('User synced', { userId: user.id, clerkId });
     }
 
     res.json({
@@ -63,7 +64,7 @@ router.post('/sync', async (req: any, res) => {
       },
     });
   } catch (error) {
-    console.error('User sync error:', error);
+    logError('User sync error', error as Error);
     res.status(500).json({ 
       error: 'Failed to sync user',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -97,7 +98,7 @@ router.post('/fcm-token', async (req: any, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('FCM token registration error:', error);
+    logError('FCM token registration error', error as Error);
     res.status(500).json({ error: 'Failed to register FCM token' });
   }
 });
@@ -164,18 +165,18 @@ router.delete('/', async (req: any, res) => {
     try {
       await clerk.users.deleteUser(clerkUserId);
     } catch (clerkError) {
-      console.error('Failed to delete user from Clerk:', clerkError);
+      logError('Failed to delete user from Clerk', clerkError as Error);
       // Continue - user data is already deleted from our DB
     }
 
-    console.log(`User ${user.id} (Clerk: ${clerkUserId}) deleted successfully`);
+    logInfo('User deleted successfully', { userId: user.id, clerkUserId });
 
     res.json({ 
       success: true, 
       message: 'Account deleted successfully' 
     });
   } catch (error) {
-    console.error('Delete account error:', error);
+    logError('Delete account error', error as Error);
     res.status(500).json({ 
       error: 'Failed to delete account',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -199,7 +200,7 @@ router.get('/profile', async (req: any, res) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Get profile error:', error);
+    logError('Get profile error', error as Error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -230,7 +231,7 @@ router.patch('/profile', async (req: any, res) => {
 
     res.json(updatedUser);
   } catch (error) {
-    console.error('Update profile error:', error);
+    logError('Update profile error', error as Error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -262,7 +263,7 @@ router.get('/settings', async (req: any, res) => {
 
     res.json(settings);
   } catch (error) {
-    console.error('Get settings error:', error);
+    logError('Get settings error', error as Error);
     res.status(500).json({ error: 'Failed to fetch settings' });
   }
 });
@@ -305,7 +306,7 @@ router.patch('/settings', async (req: any, res) => {
 
     res.json(settings);
   } catch (error) {
-    console.error('Update settings error:', error);
+    logError('Update settings error', error as Error);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });

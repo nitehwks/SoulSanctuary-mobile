@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { logError, logWarn, logInfo } from './logger';
 
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
@@ -42,7 +43,7 @@ interface Memory {
  */
 async function callAIWithTimeout(messages: any[], model: string = DEFAULT_MODEL, timeoutMs: number = 15000): Promise<string | null> {
   if (!hasValidApiKey) {
-    console.warn('No valid OpenRouter API key configured');
+    logWarn('No valid OpenRouter API key configured');
     return null;
   }
 
@@ -60,11 +61,11 @@ async function callAIWithTimeout(messages: any[], model: string = DEFAULT_MODEL,
     return completion.choices[0].message.content || null;
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.error('AI request timed out');
+      logError('AI request timed out', error as Error);
     } else if (error.status === 401) {
-      console.error('AI API authentication failed - check your API key');
+      logError('AI API authentication failed - check your API key', error as Error);
     } else {
-      console.error('AI API error:', error.message);
+      logError('AI API error', new Error(error.message));
     }
     return null;
   }
@@ -96,7 +97,7 @@ export async function generateMoodInsight(moodEntries: MoodEntry[]): Promise<str
 
     return content || 'We\'re here to support you. Consider talking to someone you trust about how you\'re feeling.';
   } catch (error) {
-    console.error('Failed to generate mood insight:', error);
+    logError('Failed to generate mood insight', error as Error);
     return 'We\'re here to support you. Consider talking to someone you trust about how you\'re feeling.';
   }
 }
@@ -123,7 +124,7 @@ export async function generateGoalCoaching(goal: Goal): Promise<string> {
 
     return content || 'Every step forward counts. You\'re doing great!';
   } catch (error) {
-    console.error('Failed to generate goal coaching:', error);
+    logError('Failed to generate goal coaching', error as Error);
     return 'Remember: progress, not perfection. Keep going!';
   }
 }
@@ -194,7 +195,7 @@ export async function generateMemoryInsights(memories: Memory[]): Promise<string
     const insights = JSON.parse(content);
     return Array.isArray(insights) ? insights.slice(0, 5) : ['Your memories tell a unique story.'];
   } catch (error) {
-    console.error('Failed to generate memory insights:', error);
+    logError('Failed to generate memory insights', error as Error);
     return [
       'Your memories are valuable markers of your journey.',
       'Looking back can help us understand our patterns.',
@@ -248,7 +249,7 @@ export async function generateWeeklySummary(
       suggestions: result.suggestions || ['Take time to rest and recharge']
     };
   } catch (error) {
-    console.error('Failed to generate weekly summary:', error);
+    logError('Failed to generate weekly summary', error as Error);
     return {
       summary: 'This week was part of your ongoing journey.',
       highlights: ['You took steps to care for your mental health'],
@@ -305,9 +306,9 @@ export async function generateChatResponse(
   mode: 'spiritual' | 'general' = 'spiritual'
 ): Promise<string> {
   // If no API key, return fallback response immediately
-  console.log('[generateChatResponse] Starting, hasValidApiKey:', hasValidApiKey);
+  logInfo('Starting chat response generation', { hasValidApiKey });
   if (!hasValidApiKey) {
-    console.warn('[generateChatResponse] No OpenRouter API key - using fallback response');
+    logWarn('No OpenRouter API key - using fallback response');
     return getFallbackResponse(mode);
   }
 
@@ -323,7 +324,7 @@ export async function generateChatResponse(
 
     return content || getFallbackResponse(mode);
   } catch (error) {
-    console.error('Chat response error:', error);
+    logError('Chat response error', error as Error);
     return getFallbackResponse(mode);
   }
 }
@@ -370,7 +371,7 @@ export async function generateSuggestions(
     const suggestions = JSON.parse(content);
     return Array.isArray(suggestions) ? suggestions.slice(0, 3) : fallbackSuggestions[context];
   } catch (error) {
-    console.error('Failed to generate suggestions:', error);
+    logError('Failed to generate suggestions', error as Error);
     return fallbackSuggestions[context];
   }
 }

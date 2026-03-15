@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { logError, logWarn } from './logger';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -57,7 +58,7 @@ export function encrypt(text: string): string {
     
     return result.toString('base64');
   } catch (error) {
-    console.error('Encryption error:', error);
+    logError('Encryption error', error as Error);
     throw new Error('Failed to encrypt data');
   }
 }
@@ -92,7 +93,7 @@ export function decrypt(encryptedData: string): string {
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    logError('Decryption error', error as Error);
     throw new Error('Failed to decrypt data - data may be corrupted or key incorrect');
   }
 }
@@ -121,7 +122,7 @@ export function verifyEncryptionSetup(): boolean {
     const decrypted = decrypt(encrypted);
     return decrypted === testText;
   } catch (error) {
-    console.error('Encryption setup verification failed:', error);
+    logError('Encryption setup verification failed', error as Error);
     return false;
   }
 }
@@ -159,7 +160,7 @@ export function decryptObject<T extends Record<string, any>>(
         (result as any)[field] = decrypt(result[field]);
       } catch (error) {
         // If decryption fails, field might not be encrypted
-        console.warn(`Failed to decrypt field ${String(field)}`);
+        logWarn(`Failed to decrypt field ${String(field)}`);
       }
     }
   }

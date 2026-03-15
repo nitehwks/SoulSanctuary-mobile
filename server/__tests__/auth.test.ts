@@ -72,7 +72,7 @@ vi.mock('../db', () => {
 // Mock Clerk BEFORE any other imports
 vi.mock('@clerk/clerk-sdk-node', () => {
   return {
-    Clerk: vi.fn().mockImplementation(() => ({
+    createClerkClient: vi.fn().mockImplementation(() => ({
       verifyToken: vi.fn().mockImplementation((token) => {
         if (token === 'invalid_token') {
           return Promise.reject(new Error('Invalid token'));

@@ -7,9 +7,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>SoulSanctuary</title>
+    <style>
+      body { margin: 0; background: #1a1510; color: #f5e6c8; font-family: system-ui, sans-serif; }
+      #root { min-height: 100vh; }
+      .loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="loading">Loading SoulSanctuary...</div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Debug: Log any errors
+      window.addEventListener('error', (e) => {
+        console.error('Global error:', e.error);
+        document.body.innerHTML = '<div style="padding:20px;color:red"><h1>Error</h1><pre>' + e.error + '</pre></div>';
+      });
+    </script>
   </body>
 </html>

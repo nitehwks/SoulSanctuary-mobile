@@ -30,15 +30,88 @@ export function useAI() {
     }
   }, []);
 
-  const chatWithTherapist = useCallback(async (message: string, history: unknown[]): Promise<string> => {
+  const chatWithTherapist = useCallback(async (message: string, history: unknown[], mode: 'spiritual' | 'general' = 'spiritual'): Promise<string> => {
     setLoading(true);
     try {
-      const result = await post('/ai/chat', { message, history });
+      const result = await post('/ai/chat', { message, history, mode });
       return result.response;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  return { getMoodInsight, getGoalCoaching, chatWithTherapist, loading };
+  // Comprehensive coaching - uses full user profile
+  const getCoachResponse = useCallback(async (
+    message: string, 
+    history: unknown[]
+  ): Promise<{
+    response: string;
+    suggestedScripture?: string;
+    recommendedExercise?: string;
+    technique?: string;
+  }> => {
+    setLoading(true);
+    try {
+      const result = await post('/ai/coach-response', { message, history });
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const analyzeConversation = useCallback(async (
+    messages: { role: 'user' | 'assistant'; content: string; timestamp: Date }[],
+    sessionId?: string
+  ): Promise<{ insights: unknown; profileUpdated: boolean }> => {
+    setLoading(true);
+    try {
+      const result = await post('/ai/analyze-conversation', { messages, sessionId });
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const generateCoachingPlan = useCallback(async (): Promise<{ success: boolean; plan?: unknown }> => {
+    setLoading(true);
+    try {
+      const result = await post('/ai/coaching-plan', {});
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getCoachingPlan = useCallback(async (): Promise<{ hasPlan: boolean; plan?: unknown }> => {
+    const result = await fetch('/api/ai/coaching-plan').then(r => r.json());
+    return result;
+  }, []);
+
+  const getUserInsights = useCallback(async (): Promise<{ hasData: boolean; summary?: unknown }> => {
+    const result = await fetch('/api/ai/user-insights').then(r => r.json());
+    return result;
+  }, []);
+
+  const generateCurriculum = useCallback(async (topic: string): Promise<{ success: boolean; content?: unknown }> => {
+    setLoading(true);
+    try {
+      const result = await post('/ai/curriculum', { topic });
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { 
+    getMoodInsight, 
+    getGoalCoaching, 
+    chatWithTherapist, 
+    getCoachResponse,
+    analyzeConversation,
+    generateCoachingPlan,
+    getCoachingPlan,
+    getUserInsights,
+    generateCurriculum,
+    loading 
+  };
 }

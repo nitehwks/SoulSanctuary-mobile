@@ -1,44 +1,95 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ClerkProvider } from '@clerk/clerk-react';
-import { Capacitor } from '@capacitor/core';
-import App from './App';
+import { ClerkProvider, useAuth } from '@clerk/clerk-react';
+import { BrowserRouter } from 'react-router-dom';
+import SoulSanctuary from './App';
 import './index.css';
+import { initializeOfflineSupport } from './services/offline';
+import { initializeBackgroundSync } from './services/backgroundSync';
+import { initializePushNotifications } from './services/pushNotifications';
+import { initializeNotifications } from './services/notifications';
 
-// CAPACITOR FIX: Hardcode your Clerk key here for mobile
-// Get your key from: https://dashboard.clerk.com/last-active?path=api-keys
-const CLERK_PUBLISHABLE_KEY = 'sk_test_YH1FdsmwyV9nXuLoKM3OOzBtEsNSQYv5YkeUVAXCTi';
+// Clerk publishable key - must start with pk_
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_Y3JlZGlibGUtbGl6YXJkLTc0LmNsZXJrLmFjY291bnRzLmRldiQ';
 
-// Detect if running as native mobile app
-const isNative = Capacitor.isNativePlatform();
+/**
+ * Initialize mobile services after authentication
+ */
+function MobileServicesInitializer() {
+  const { isSignedIn, isLoaded } = useAuth();
 
-// Use hardcoded key for mobile, env variable for web
-const publishableKey = isNative 
-  ? CLERK_PUBLISHABLE_KEY 
-  : (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || CLERK_PUBLISHABLE_KEY);
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
 
-// Debug logging (remove in production)
-console.log(`[Clerk] Platform: ${isNative ? 'Native Mobile' : 'Web'}`);
-console.log(`[Clerk] Key available: ${publishableKey ? 'YES' : 'NO'}`);
+    // Initialize mobile services after user is authenticated
+    const initMobileServices = async () => {
+      try {
+        // Initialize offline support (network monitoring, queue processing)
+        await initializeOfflineSupport((online) => {
+          console.log('Network status changed:', online ? 'online' : 'offline');
+        });
 
-if (!publishableKey || publishableKey === 'sk_test_YH1FdsmwyV9nXuLoKM3OOzBtEsNSQYv5YkeUVAXCTi') {
-  console.error('❌ CRITICAL: Replace pk_live_YOUR_ACTUAL_CLERK_KEY_HERE with your actual Clerk publishable key!');
+        // Initialize background sync (app state monitoring)
+        await initializeBackgroundSync();
+
+        // Initialize local notifications
+        await initializeNotifications();
+
+        // Initialize push notifications (FCM/APNs)
+        await initializePushNotifications();
+
+        console.log('Mobile services initialized');
+      } catch (error) {
+        console.error('Failed to initialize mobile services:', error);
+      }
+    };
+
+    initMobileServices();
+  }, [isSignedIn, isLoaded]);
+
+  return null;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ClerkProvider 
-      publishableKey={publishableKey}
+      publishableKey={CLERK_PUBLISHABLE_KEY}
       appearance={{
         elements: {
-          rootBox: {
-            width: '100%',
+          rootBox: { width: '100%' },
+          card: { 
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '1rem'
+          },
+          headerTitle: { color: '#eaeaea' },
+          headerSubtitle: { color: 'rgba(234,234,234,0.7)' },
+          socialButtonsBlockButton: {
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            color: '#eaeaea',
+            border: '1px solid rgba(255,255,255,0.2)'
+          },
+          socialButtonsBlockButtonText: { color: '#eaeaea' },
+          formFieldLabel: { color: '#eaeaea' },
+          formFieldInput: {
+            backgroundColor: '#1a1a2e',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: '#eaeaea'
+          },
+          footerActionText: { color: 'rgba(234,234,234,0.7)' },
+          footerActionLink: { color: '#e94560' },
+          formButtonPrimary: {
+            backgroundColor: '#e94560',
+            color: '#1a1a2e',
+            fontWeight: '600'
           }
         }
       }}
     >
-      <App />
+      <BrowserRouter>
+        <MobileServicesInitializer />
+        <SoulSanctuary />
+      </BrowserRouter>
     </ClerkProvider>
   </React.StrictMode>
 );
-

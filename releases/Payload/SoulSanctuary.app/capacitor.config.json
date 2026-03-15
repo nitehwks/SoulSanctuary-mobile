@@ -1,0 +1,59 @@
+{
+	"appId": "com.soulsanctuary.app",
+	"appName": "SoulSanctuary",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https",
+		"iosScheme": "https"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"backgroundColor": "#1a1a2e",
+			"androidSplashResourceName": "splash",
+			"androidScaleType": "CENTER_CROP",
+			"showSpinner": false
+		},
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#1a1a2e"
+		}
+	},
+	"ios": {
+		"scheme": "SoulSanctuary",
+		"contentInset": "automatic",
+		"allowsLinkPreview": true,
+		"scrollEnabled": true,
+		"handleApplicationNotifications": true
+	},
+	"android": {
+		"intentFilters": [
+			{
+				"action": "VIEW",
+				"autoVerify": true,
+				"data": {
+					"scheme": "soulsanctuary",
+					"host": "auth"
+				},
+				"category": [
+					"BROWSABLE",
+					"DEFAULT"
+				]
+			}
+		],
+		"useLegacyBridge": false
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin",
+		"HapticsPlugin",
+		"KeyboardPlugin",
+		"LocalNotificationsPlugin",
+		"CAPNetworkPlugin",
+		"PreferencesPlugin",
+		"PushNotificationsPlugin",
+		"ScreenOrientationPlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin"
+	]
+}

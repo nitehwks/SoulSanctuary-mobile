@@ -14,7 +14,7 @@ export function useMood() {
       const crisisCheck = analyzeCrisisRisk(moodData.note);
       if (crisisCheck.isCrisis) {
         // Alert crisis system but still save
-        await post('/crisis-alert', { 
+        await post('/crisis/alert', { 
           severity: crisisCheck.severity, 
           context: moodData 
         });

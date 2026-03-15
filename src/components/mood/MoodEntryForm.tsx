@@ -4,6 +4,7 @@ import { Card } from '../ui/Card';
 import { MoodSlider } from '../ui/MoodSlider';
 import { useMood } from '../../hooks/useMood';
 import { useSanctuary } from '../../context/SanctuaryContext';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 const EMOTIONS = ['Happy', 'Calm', 'Anxious', 'Sad', 'Angry', 'Tired', 'Hopeful', 'Lonely'];
 
@@ -11,7 +12,8 @@ export function MoodEntryForm() {
   const [mood, setMood] = useState(3);
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
   const [note, setNote] = useState('');
-  const { submitMood, loading } = useMood();
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { submitMood, loading, error } = useMood();
   const { refreshData } = useSanctuary();
 
   const toggleEmotion = (emotion: string) => {
@@ -24,20 +26,55 @@ export function MoodEntryForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await submitMood({
-      mood,
-      emotions: selectedEmotions,
-      note,
-      userId: '', // Set by backend from auth
-    });
-    await refreshData();
-    setNote('');
-    setSelectedEmotions([]);
+    setShowSuccess(false);
+    
+    try {
+      await submitMood({
+        mood,
+        emotions: selectedEmotions,
+        note,
+        userId: '', // Set by backend from auth
+      });
+      
+      // Show success message
+      setShowSuccess(true);
+      
+      // Clear form
+      setNote('');
+      setSelectedEmotions([]);
+      setMood(3);
+      
+      // Refresh data in context
+      await refreshData();
+      
+      // Hide success after 3 seconds
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to submit mood:', err);
+      // Error is handled by the hook and displayed below
+    }
   };
 
   return (
     <Card>
       <h2 className="text-2xl font-bold text-sanctuary-light mb-6">How are you feeling?</h2>
+      
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-xl flex items-center gap-2 text-green-400">
+          <CheckCircle className="w-5 h-5" />
+          <span>Mood logged successfully!</span>
+        </div>
+      )}
+      
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center gap-2 text-red-400">
+          <AlertCircle className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         <MoodSlider value={mood} onChange={setMood} />
         
@@ -68,11 +105,22 @@ export function MoodEntryForm() {
             onChange={(e) => setNote(e.target.value)}
             placeholder="What's on your mind?"
             className="w-full h-32 sanctuary-input resize-none"
+            disabled={loading}
           />
         </div>
 
         <Button type="submit" disabled={loading} className="w-full">
-          {loading ? 'Saving...' : 'Log Mood'}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Saving...
+            </span>
+          ) : (
+            'Log Mood'
+          )}
         </Button>
       </form>
     </Card>

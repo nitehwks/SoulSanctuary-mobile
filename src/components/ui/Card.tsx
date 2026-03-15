@@ -13,8 +13,8 @@ export function Card({ className, glow, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-sanctuary-purple rounded-2xl p-6 shadow-xl border border-sanctuary-accent/30',
-        glow && 'animate-pulse-glow',
+        'bg-black/40 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/10',
+        glow && 'animate-pulse-glow border-sanctuary-gold/30',
         className
       )}
       {...props}

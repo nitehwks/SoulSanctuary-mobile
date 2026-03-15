@@ -18,42 +18,111 @@
 }
 
 @layer components {
+  /* Glassmorphism cards for background image overlay */
   .sanctuary-card {
-    @apply bg-sanctuary-purple rounded-2xl p-6 shadow-xl border border-sanctuary-accent/30;
+    @apply bg-black/40 backdrop-blur-md rounded-2xl p-6 shadow-2xl 
+           border border-white/10;
   }
   
+  /* Primary button - golden glow */
   .sanctuary-button {
-    @apply bg-sanctuary-glow text-white px-6 py-3 rounded-full font-semibold 
-           hover:bg-opacity-90 active:scale-95 transition-all;
+    @apply bg-gradient-to-r from-sanctuary-gold to-sanctuary-amber 
+           text-sanctuary-dark px-6 py-3 rounded-full font-semibold 
+           hover:from-sanctuary-amber hover:to-sanctuary-gold
+           active:scale-95 transition-all shadow-lg shadow-sanctuary-gold/30
+           border border-sanctuary-gold/50;
   }
   
+  /* Secondary button - glass effect */
+  .sanctuary-button-secondary {
+    @apply bg-white/10 backdrop-blur-sm text-sanctuary-cream 
+           px-6 py-3 rounded-full font-semibold
+           hover:bg-white/20 active:scale-95 transition-all
+           border border-white/20;
+  }
+  
+  /* Input fields - glass effect */
   .sanctuary-input {
-    @apply bg-sanctuary-dark/50 border border-sanctuary-accent rounded-xl px-4 py-3 
-           focus:outline-none focus:border-sanctuary-glow text-sanctuary-light;
+    @apply bg-black/30 backdrop-blur-sm border border-white/20 
+           rounded-xl px-4 py-3 text-sanctuary-cream
+           placeholder:text-sanctuary-light/50
+           focus:outline-none focus:border-sanctuary-gold/50 focus:bg-black/40
+           transition-all;
+  }
+  
+  /* Background image container */
+  .sanctuary-bg {
+    @apply fixed inset-0 bg-sanctuary-bg bg-cover bg-center bg-no-repeat bg-fixed;
+  }
+  
+  /* Dark overlay for readability */
+  .sanctuary-overlay {
+    @apply fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - warm golden theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: rgba(0, 0, 0, 0.3);
 }
 ::-webkit-scrollbar-thumb {
-  background: #0f3460;
+  background: #d4a853;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #e94560;
+  background: #c9a227;
 }
 
 /* Animation classes */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(233, 69, 96, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(233, 69, 96, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 168, 83, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(212, 168, 83, 0.6); }
 }
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Text shadow for readability on background */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.text-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .sanctuary-card {
+    @apply p-4 rounded-xl;
+  }
+  
+  .sanctuary-button,
+  .sanctuary-button-secondary {
+    @apply px-4 py-2.5 text-sm;
+  }
+}
+
+/* iOS momentum scrolling */
+.scroll-smooth-touch {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Safe area for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-header {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  .safe-footer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
 }

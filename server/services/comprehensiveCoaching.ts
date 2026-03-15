@@ -19,6 +19,9 @@ const openai = new OpenAI({
   },
 });
 
+// Check if API key is configured
+const hasValidApiKey = !!process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.startsWith('sk-');
+
 const COACHING_MODEL = 'anthropic/claude-3.5-sonnet';
 
 // =============================================================================
@@ -546,6 +549,17 @@ export async function generateCoachResponse(context: CoachContext): Promise<{
   recommendedExercise?: string;
   technique?: string;
 }> {
+  // Return fallback if no API key
+  if (!hasValidApiKey) {
+    logInfo('No OpenRouter API key - using fallback coach response');
+    return {
+      response: "I'm here to walk alongside you. While I'm unable to access my full coaching abilities right now, I want you to know that you are seen, valued, and never alone on this journey. What's on your heart today?",
+      suggestedScripture: "Psalm 46:1 - God is our refuge and strength, an ever-present help in trouble.",
+      recommendedExercise: "Take 5 deep breaths, breathing in peace and breathing out worry.",
+      technique: "Grounding"
+    };
+  }
+
   try {
     // Gather user context
     const userData = await gatherUserData(context.userId);

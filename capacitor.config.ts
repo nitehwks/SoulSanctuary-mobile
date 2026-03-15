@@ -4,13 +4,35 @@ const config: CapacitorConfig = {
   appId: 'com.soulsanctuary.app',
   appName: 'SoulSanctuary',
   webDir: 'dist',
+  
+  // ==========================================
+  // DEVELOPMENT MODE (Live Reload)
+  // ==========================================
+  // Uncomment this block for development with live reload:
+  // 1. Get your computer's IP: ipconfig getifaddr en0
+  // 2. Replace 192.168.x.x with your actual IP
+  // 3. Run: npm run dev (starts frontend on port 3000)
+  // 4. Run: npm run server:dev (starts backend on port 3001)
+  // 5. Run: npx cap sync ios
+  // 6. Run: npx cap open ios
+  //
+  // server: {
+  //   url: 'http://10.1.10.40:3000',  // REPLACE with your IP
+  //   cleartext: true,
+  // },
+  
+  // ==========================================
+  // PRODUCTION MODE (Static Build)
+  // ==========================================
+  // Comment out the server block above for production builds
+  // The app will use static files from the dist folder
+  // Make sure to set VITE_API_URL in .env.local to your backend URL
+  
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    // For development - use local server
-    // url: 'http://192.168.1.xxx:5173',
-    // cleartext: true,
   },
+  
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
@@ -29,7 +51,6 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     allowsLinkPreview: true,
     scrollEnabled: true,
-    // Handle OAuth callbacks
     handleApplicationNotifications: true,
   },
   android: {

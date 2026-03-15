@@ -65,7 +65,7 @@ function isSubscriptionActive(status: SubscriptionStatus, currentPeriodEnd: Date
 /**
  * Middleware to load user's subscription info into request
  */
-export async function loadSubscription(req: Request, res: Response, next: NextFunction) {
+export async function loadSubscription(req: Request, _res: Response, next: NextFunction) {
   try {
     const userId = req.auth?.userId;
     

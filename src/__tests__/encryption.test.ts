@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 
 // Import the encryption functions (we'll recreate them for testing)

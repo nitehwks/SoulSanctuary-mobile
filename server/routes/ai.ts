@@ -27,7 +27,7 @@ import {
 import { logError } from '../services/logger';
 import { db } from '../db';
 import { eq, desc } from 'drizzle-orm';
-import { requirePremium, requireFeature, limitAIUsage, loadSubscription, incrementAIUsage } from '../middleware/premium';
+import { requireFeature, limitAIUsage, loadSubscription, incrementAIUsage } from '../middleware/premium';
 
 // Extend Express Request type
 interface AuthenticatedRequest extends Request {

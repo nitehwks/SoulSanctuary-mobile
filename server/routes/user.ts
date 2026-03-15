@@ -2,10 +2,10 @@ import { Router } from 'express';
 import { db } from '../db';
 import { users, moods, goals, memories, crisisEvents, notifications, emergencyContacts, chatHistory, userSettings, milestones } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { Clerk } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 
 const router = Router();
-const clerk = Clerk({ secretKey: process.env.CLERK_SECRET_KEY });
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 /**
  * POST /api/user/sync

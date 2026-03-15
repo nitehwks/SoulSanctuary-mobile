@@ -28,6 +28,9 @@ const openai = new OpenAI({
   },
 });
 
+// Check if API key is configured
+const hasValidApiKey = !!process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.startsWith('sk-');
+
 const ANALYSIS_MODEL = 'anthropic/claude-3.5-sonnet';
 
 // =============================================================================
@@ -84,6 +87,23 @@ export interface ExtractedInsights {
  * This is called after each significant conversation to update the user's profile
  */
 export async function analyzeConversation(context: ConversationContext): Promise<ExtractedInsights> {
+  // Return default insights if no API key
+  if (!hasValidApiKey) {
+    logInfo('No OpenRouter API key - skipping conversation analysis');
+    return {
+      emotionalThemes: [],
+      spiritualThemes: [],
+      behavioralThemes: [],
+      psychologicalIndicators: {},
+      substanceIndicators: { mentionsSubstances: false, recoveryLanguage: false },
+      relationshipDynamics: { mentionsRelationships: false, isolationIndicators: false },
+      spiritualState: { faithStruggle: false, seekingConnection: false, comfortFromScripture: false },
+      userPreferences: { communicationStyle: 'gentle', respondsToScripture: 'neutral', engagementLevel: 'medium' },
+      breakthroughMoments: [],
+      recommendedApproach: 'gentle_support'
+    };
+  }
+
   try {
     logInfo(`Analyzing conversation for user ${context.userId}`);
     

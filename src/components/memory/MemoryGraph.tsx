@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { logger } from '../../utils/logger';
 import { Card } from '../ui/Card';
 import { apiFetch } from '../../utils/api';
 import type { MemoryNode } from '../../types';
@@ -118,7 +119,7 @@ export function MemoryGraph() {
 
         setGraphData({ nodes: graphNodes, links });
       } catch (error) {
-        console.error('Failed to fetch memories:', error);
+        logger.error('Failed to fetch memories', error);
       } finally {
         setIsLoading(false);
       }

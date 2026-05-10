@@ -1,22 +1,5 @@
-import OpenAI from 'openai';
 import { logError, logWarn, logInfo } from './logger';
-
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    'HTTP-Referer': process.env.FRONTEND_URL || 'https://soulsanctuary.app',
-    'X-Title': 'SoulSanctuary',
-  },
-});
-
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet';
-const FALLBACK_MODEL = process.env.OPENROUTER_FALLBACK_MODEL || 'openai/gpt-4o-mini';
-
-// Check if API key is configured (function to check at runtime)
-function hasValidApiKey(): boolean {
-  return !!process.env.OPENROUTER_API_KEY && process.env.OPENROUTER_API_KEY.startsWith('sk-');
-}
+import { callAIWithTimeout, hasValidApiKey, DEFAULT_MODEL, FALLBACK_MODEL } from './openrouter';
 
 interface MoodEntry {
   mood: number;
@@ -38,39 +21,6 @@ interface Memory {
   content: string;
   sentiment: number;
   timestamp: string;
-}
-
-/**
- * Helper to make API calls with timeout
- */
-async function callAIWithTimeout(messages: any[], model: string = DEFAULT_MODEL, timeoutMs: number = 15000): Promise<string | null> {
-  if (!hasValidApiKey()) {
-    logWarn('No valid OpenRouter API key configured');
-    return null;
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    
-    const completion = await openai.chat.completions.create({
-      model,
-      messages,
-      max_tokens: 500,
-    }, { signal: controller.signal });
-    
-    clearTimeout(timeoutId);
-    return completion.choices[0].message.content || null;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      logError('AI request timed out', error as Error);
-    } else if (error.status === 401) {
-      logError('AI API authentication failed - check your API key', error as Error);
-    } else {
-      logError('AI API error', new Error(error.message));
-    }
-    return null;
-  }
 }
 
 /**
@@ -132,7 +82,8 @@ export async function generateGoalCoaching(goal: Goal): Promise<string> {
 }
 
 /**
- * Detect if a message indicates a crisis situation
+ * Detect if a message indicates a crisis situation.
+ * This is a local, synchronous check that does not require an API call.
  */
 export async function detectCrisis(message: string): Promise<{ isCrisis: boolean; severity: 'low' | 'medium' | 'high' | 'critical' }> {
   const crisisKeywords = {
@@ -168,7 +119,7 @@ export async function detectCrisis(message: string): Promise<{ isCrisis: boolean
  * Generate insights from memory patterns
  */
 export async function generateMemoryInsights(memories: Memory[]): Promise<string[]> {
-  if (!hasValidApiKey || memories.length === 0) {
+  if (!hasValidApiKey() || memories.length === 0) {
     return [
       'Your memories are valuable markers of your journey.',
       'Looking back can help us understand our patterns.',
@@ -300,14 +251,13 @@ function getFallbackResponse(mode: 'spiritual' | 'general'): string {
 }
 
 /**
- * Generate chat response
+ * Generate chat response for the AI coach
  */
 export async function generateChatResponse(
   message: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   mode: 'spiritual' | 'general' = 'spiritual'
 ): Promise<string> {
-  // If no API key, return fallback response immediately
   logInfo('Starting chat response generation', { hasValidApiKey: hasValidApiKey() });
   if (!hasValidApiKey()) {
     logWarn('No OpenRouter API key - using fallback response');
@@ -322,7 +272,7 @@ export async function generateChatResponse(
       },
       ...history.map(h => ({ role: h.role, content: h.content })),
       { role: 'user', content: message }
-    ], DEFAULT_MODEL, 10000); // 10 second timeout
+    ], DEFAULT_MODEL, 10000);
 
     return content || getFallbackResponse(mode);
   } catch (error) {
@@ -336,7 +286,7 @@ export async function generateChatResponse(
  */
 export async function generateSuggestions(
   context: 'mood' | 'goal' | 'crisis' | 'general',
-  data: any
+  data: Record<string, unknown>
 ): Promise<string[]> {
   const fallbackSuggestions: Record<string, string[]> = {
     mood: ['Practice deep breathing', 'Take a short walk', 'Write in a journal'],

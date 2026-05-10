@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logError } from '../services/logger';
 
 /**
  * Custom error class with status code
@@ -50,7 +51,7 @@ export function errorHandler(
   }
 
   // Log error
-  console.error('Error:', {
+  logError('Error', err, {
     message: err.message,
     stack: err.stack,
     statusCode,
@@ -58,7 +59,7 @@ export function errorHandler(
   });
 
   // Send response
-  const errorResponse: any = {
+  const errorResponse: Record<string, unknown> = {
     success: false,
     error: message,
     ...(isDev && {
@@ -83,7 +84,7 @@ export function notFoundHandler(req: Request, res: Response) {
 /**
  * Async handler wrapper to catch errors in async route handlers
  */
-export function asyncHandler(fn: Function) {
+export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
@@ -92,7 +93,7 @@ export function asyncHandler(fn: Function) {
 /**
  * Request validation error handler
  */
-export function handleValidationError(errors: any[]) {
+export function handleValidationError(errors: Array<{ path: string; message: string }>) {
   const message = errors.map(err => `${err.path}: ${err.message}`).join(', ');
   return new AppError(message, 400);
 }
@@ -100,7 +101,7 @@ export function handleValidationError(errors: any[]) {
 /**
  * Database error handler
  */
-export function handleDatabaseError(error: any): AppError {
+export function handleDatabaseError(error: { code?: string; message?: string }): AppError {
   // PostgreSQL error codes
   if (error.code === '23505') {
     return new AppError('Duplicate entry - this record already exists', 409);

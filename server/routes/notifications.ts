@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { db } from '../db';
 import { notifications, users } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { logError } from '../services/logger';
 
 const router = Router();
 
@@ -9,10 +11,10 @@ const router = Router();
  * GET /api/notifications
  * Get user's notifications
  */
-router.get('/', async (req: any, res) => {
+router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -27,7 +29,7 @@ router.get('/', async (req: any, res) => {
 
     res.json(userNotifications);
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logError('Get notifications error', error as Error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
@@ -36,12 +38,12 @@ router.get('/', async (req: any, res) => {
  * POST /api/notifications
  * Create a new notification (internal use)
  */
-router.post('/', async (req: any, res) => {
+router.post('/', async (req: AuthenticatedRequest, res) => {
   try {
     const { title, body, type, data } = req.body;
 
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -59,7 +61,7 @@ router.post('/', async (req: any, res) => {
 
     res.json(notification);
   } catch (error) {
-    console.error('Create notification error:', error);
+    logError('Create notification error', error as Error);
     res.status(500).json({ error: 'Failed to create notification' });
   }
 });
@@ -68,7 +70,7 @@ router.post('/', async (req: any, res) => {
  * PATCH /api/notifications/:id/read
  * Mark a notification as read
  */
-router.patch('/:id/read', async (req: any, res) => {
+router.patch('/:id/read', async (req: AuthenticatedRequest, res) => {
   try {
     await db.update(notifications)
       .set({ read: true })
@@ -76,7 +78,7 @@ router.patch('/:id/read', async (req: any, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Mark notification read error:', error);
+    logError('Mark notification read error', error as Error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
@@ -85,10 +87,10 @@ router.patch('/:id/read', async (req: any, res) => {
  * POST /api/notifications/read-all
  * Mark all notifications as read
  */
-router.post('/read-all', async (req: any, res) => {
+router.post('/read-all', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -101,7 +103,7 @@ router.post('/read-all', async (req: any, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Mark all read error:', error);
+    logError('Mark all read error', error as Error);
     res.status(500).json({ error: 'Failed to mark all as read' });
   }
 });
@@ -110,14 +112,14 @@ router.post('/read-all', async (req: any, res) => {
  * DELETE /api/notifications/:id
  * Delete a notification
  */
-router.delete('/:id', async (req: any, res) => {
+router.delete('/:id', async (req: AuthenticatedRequest, res) => {
   try {
     await db.delete(notifications)
       .where(eq(notifications.id, req.params.id));
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logError('Delete notification error', error as Error);
     res.status(500).json({ error: 'Failed to delete notification' });
   }
 });

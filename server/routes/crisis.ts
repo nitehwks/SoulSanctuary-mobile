@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { db } from '../db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -21,12 +22,12 @@ const router = Router();
  * POST /api/crisis/alert
  * Log a crisis event and trigger notifications
  */
-router.post('/alert', validateBody(crisisAlertSchema), async (req: any, res) => {
+router.post('/alert', validateBody(crisisAlertSchema), async (req: AuthenticatedRequest, res) => {
   try {
     const { severity, context } = req.body;
     
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
     
     if (!user) {
@@ -66,12 +67,12 @@ router.post('/alert', validateBody(crisisAlertSchema), async (req: any, res) => 
  * POST /api/crisis/intervention
  * Handle immediate crisis intervention
  */
-router.post('/intervention', validateBody(crisisInterventionSchema), async (req: any, res) => {
+router.post('/intervention', validateBody(crisisInterventionSchema), async (req: AuthenticatedRequest, res) => {
   try {
     const { context } = req.body;
     
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
     
     if (!user) {
@@ -97,7 +98,7 @@ router.post('/intervention', validateBody(crisisInterventionSchema), async (req:
  * POST /api/crisis/analyze
  * Analyze mood data for crisis indicators
  */
-router.post('/analyze', validateBody(crisisAnalyzeSchema), async (req: any, res) => {
+router.post('/analyze', validateBody(crisisAnalyzeSchema), async (req: AuthenticatedRequest, res) => {
   try {
     const { moodData } = req.body;
     
@@ -105,7 +106,7 @@ router.post('/analyze', validateBody(crisisAnalyzeSchema), async (req: any, res)
     
     if (analysis) {
       const user = await db.query.users.findFirst({
-        where: eq(users.clerkId, req.auth.userId),
+        where: eq(users.clerkId, req.auth!.userId),
       });
       
       if (user) {
@@ -118,7 +119,7 @@ router.post('/analyze', validateBody(crisisAnalyzeSchema), async (req: any, res)
         );
         
         if (analysis.severity === 'high' || analysis.severity === 'critical') {
-          await notifyEmergencyContacts(user.id, analysis.severity).catch(console.error);
+          await notifyEmergencyContacts(user.id, analysis.severity).catch((err) => logError('Failed to notify emergency contacts', err));
         }
 
         logAudit('CRISIS_DETECTED', user.id, { severity: analysis.severity });
@@ -139,10 +140,10 @@ router.post('/analyze', validateBody(crisisAnalyzeSchema), async (req: any, res)
  * GET /api/crisis/history
  * Get user's crisis event history
  */
-router.get('/history', async (req: any, res) => {
+router.get('/history', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
     
     if (!user) {
@@ -171,12 +172,12 @@ router.get('/resources', (_req, res) => {
  * PATCH /api/crisis/:id/resolve
  * Mark a crisis event as resolved
  */
-router.patch('/:id/resolve', async (req: any, res) => {
+router.patch('/:id/resolve', async (req: AuthenticatedRequest, res) => {
   try {
     await resolveCrisisEvent(req.params.id);
 
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
     
     if (user) {

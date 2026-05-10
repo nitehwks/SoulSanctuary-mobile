@@ -1,5 +1,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Preferences } from '@capacitor/preferences';
+import { logger } from '../utils/logger';
 
 const NOTIFICATIONS_KEY = 'scheduled_notifications';
 
@@ -11,7 +12,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
     const result = await LocalNotifications.requestPermissions();
     return result.display === 'granted';
   } catch (error) {
-    console.error('Failed to request notification permission:', error);
+    logger.error('Failed to request notification permission', error);
     return false;
   }
 }
@@ -24,7 +25,7 @@ export async function checkNotificationPermission(): Promise<boolean> {
     const result = await LocalNotifications.checkPermissions();
     return result.display === 'granted';
   } catch (error) {
-    console.error('Failed to check notification permission:', error);
+    logger.error('Failed to check notification permission', error);
     return false;
   }
 }
@@ -75,7 +76,7 @@ export async function scheduleLocalNotification(
 
     return String(notificationId);
   } catch (error) {
-    console.error('Failed to schedule notification:', error);
+    logger.error('Failed to schedule notification', error);
     throw error;
   }
 }
@@ -116,7 +117,7 @@ export async function scheduleDailyReminder(
       value: `${hour}:${minute}`,
     });
   } catch (error) {
-    console.error('Failed to schedule daily reminder:', error);
+    logger.error('Failed to schedule daily reminder', error);
     throw error;
   }
 }
@@ -141,7 +142,7 @@ export async function cancelNotification(id: string): Promise<void> {
       });
     }
   } catch (error) {
-    console.error('Failed to cancel notification:', error);
+    logger.error('Failed to cancel notification', error);
     throw error;
   }
 }
@@ -154,7 +155,7 @@ export async function getScheduledNotifications(): Promise<any[]> {
     const { value } = await Preferences.get({ key: NOTIFICATIONS_KEY });
     return value ? JSON.parse(value) : [];
   } catch (error) {
-    console.error('Failed to get scheduled notifications:', error);
+    logger.error('Failed to get scheduled notifications', error);
     return [];
   }
 }
@@ -169,7 +170,7 @@ export async function cancelAllNotifications(): Promise<void> {
     });
     await Preferences.remove({ key: NOTIFICATIONS_KEY });
   } catch (error) {
-    console.error('Failed to cancel all notifications:', error);
+    logger.error('Failed to cancel all notifications', error);
     throw error;
   }
 }
@@ -215,7 +216,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
       throw new Error('Failed to mark notification as read');
     }
   } catch (error) {
-    console.error('Failed to mark notification as read:', error);
+    logger.error('Failed to mark notification as read', error);
     throw error;
   }
 }
@@ -249,7 +250,7 @@ export async function initializeNotifications(): Promise<void> {
     const granted = await requestNotificationPermission();
     
     if (!granted) {
-      console.log('Notification permission not granted');
+      logger.info('Notification permission not granted');
       return;
     }
 
@@ -261,8 +262,8 @@ export async function initializeNotifications(): Promise<void> {
       vibration: true,
     });
 
-    console.log('Notification system initialized');
+    logger.info('Notification system initialized');
   } catch (error) {
-    console.error('Failed to initialize notifications:', error);
+    logger.error('Failed to initialize notifications', error);
   }
 }

@@ -2,25 +2,36 @@ import admin from 'firebase-admin';
 import { db } from '../db';
 import { notifications, users } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { logInfo, logWarn, logError } from './logger';
 
 // Initialize Firebase Admin if credentials are available
 let messaging: admin.messaging.Messaging | null = null;
 
 if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
-  const serviceAccount: admin.ServiceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
-  };
-  
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-  
-  messaging = admin.messaging();
-  console.log('Firebase Admin initialized for push notifications');
+  try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY
+      ?.replace(/\\n/g, '\n')
+      ?.replace(/^"/, '')
+      ?.replace(/"$/, '');
+
+    const serviceAccount: admin.ServiceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: privateKey || '',
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
+    };
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+
+    messaging = admin.messaging();
+    logInfo('Firebase Admin initialized for push notifications');
+  } catch (error) {
+    logWarn('Firebase Admin initialization failed - push notifications disabled', { errorMessage: (error as Error).message });
+    messaging = null;
+  }
 } else {
-  console.log('Firebase credentials not found - push notifications disabled');
+  logInfo('Firebase credentials not found - push notifications disabled');
 }
 
 interface NotificationData {
@@ -43,7 +54,7 @@ export async function sendPushNotification(
     });
 
     if (!user || !(user as any).fcmToken) {
-      console.log(`No FCM token found for user ${userId}`);
+      logInfo('No FCM token found for user', { userId });
       return;
     }
 
@@ -79,9 +90,9 @@ export async function sendPushNotification(
         },
       });
       
-      console.log(`Push notification sent to user ${userId}`);
+      logInfo('Push notification sent to user', { userId });
     } else {
-      console.log(`Firebase not initialized - notification stored but not sent`);
+      logInfo('Firebase not initialized - notification stored but not sent');
     }
 
     // Always store in database
@@ -94,7 +105,7 @@ export async function sendPushNotification(
       read: false,
     });
   } catch (error) {
-    console.error('Failed to send push notification:', error);
+    logError('Failed to send push notification', error as Error);
     throw error;
   }
 }
@@ -135,7 +146,7 @@ export async function scheduleNotification(
 
   // In production, use a job queue like Bull/BullMQ with Redis
   // For now, we'll handle this with a cron job that checks for pending notifications
-  console.log(`Notification scheduled for ${scheduledTime.toISOString()}`);
+  logInfo('Notification scheduled', { scheduledFor: scheduledTime.toISOString() });
 
   return notification.id;
 }
@@ -179,7 +190,7 @@ export async function processScheduledNotifications(): Promise<void> {
         .set({ read: true })
         .where(eq(notifications.id, notification.id));
     } catch (error) {
-      console.error(`Failed to send scheduled notification ${notification.id}:`, error);
+      logError('Failed to send scheduled notification', error as Error, { notificationId: notification.id });
     }
   }
 }

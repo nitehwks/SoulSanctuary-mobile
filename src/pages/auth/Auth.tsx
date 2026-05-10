@@ -1,5 +1,6 @@
 import { SignIn, SignUp, useUser, useAuth as useClerkAuth, useSignIn } from '@clerk/clerk-react';
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils/logger';
 import { Heart, Cross, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,7 +29,7 @@ export default function Auth() {
           });
           await syncUserWithBackend();
         } catch (error) {
-          console.error('Failed to sync user:', error);
+          logger.error('Failed to sync user', error);
         } finally {
           setIsSyncing(false);
         }
@@ -46,11 +47,13 @@ export default function Auth() {
 
   // Get the appropriate redirect URL based on platform
   const getRedirectUrl = () => {
-    if (isCapacitor) {
-      // Mobile app deep link (matches iOS URL scheme in Info.plist)
-      return 'soulsanctuary://auth-callback';
+    if (typeof window === 'undefined') {
+      return '/auth-callback';
     }
-    // Web
+    // Use web origin for all platforms. Capacitor serves the app from a local
+    // https:// origin (iosScheme/androidScheme are set to 'https'), which Clerk
+    // accepts as a valid redirect URL. Custom schemes like soulsanctuary:// are
+    // rejected by Clerk with "Invalid URI scheme".
     return `${window.location.origin}/auth-callback`;
   };
 
@@ -65,11 +68,11 @@ export default function Auth() {
       }
 
       const redirectUrl = getRedirectUrl();
-      const redirectUrlComplete = isCapacitor ? 'soulsanctuary://auth' : window.location.origin;
+      const redirectUrlComplete = typeof window !== 'undefined' ? window.location.origin : '/';
 
-      console.log(`[OAuth] Starting ${strategy} flow...`);
-      console.log(`[OAuth] Redirect URL: ${redirectUrl}`);
-      console.log(`[OAuth] Platform: ${isCapacitor ? 'Capacitor Mobile' : 'Web'}`);
+      logger.debug(`[OAuth] Starting ${strategy} flow...`);
+      logger.debug(`[OAuth] Redirect URL: ${redirectUrl}`);
+      logger.debug(`[OAuth] Platform: ${isCapacitor ? 'Capacitor Mobile' : 'Web'}`);
 
       // For mobile apps, we need to use the native OAuth flow
       await signIn.authenticateWithRedirect({
@@ -78,7 +81,7 @@ export default function Auth() {
         redirectUrlComplete,
       });
     } catch (error: any) {
-      console.error('[OAuth] Error:', error);
+      logger.error('[OAuth] Error', error);
       setOauthError(error.message || 'Failed to sign in. Please try again.');
     }
   };

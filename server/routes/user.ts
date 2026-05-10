@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { db } from '../db';
 import { users, moods, goals, memories, crisisEvents, notifications, emergencyContacts, chatHistory, userSettings, milestones } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -12,10 +13,10 @@ const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
  * POST /api/user/sync
  * Sync Clerk user with our database - creates user if not exists
  */
-router.post('/sync', async (req: any, res) => {
+router.post('/sync', async (req: AuthenticatedRequest, res) => {
   try {
     const { clerkId, email, name } = req.body;
-    const authUserId = req.auth.userId;
+    const authUserId = req.auth!.userId;
     
     // Verify the Clerk ID matches the authenticated user
     if (clerkId !== authUserId) {
@@ -76,7 +77,7 @@ router.post('/sync', async (req: any, res) => {
  * POST /api/user/fcm-token
  * Register FCM token for push notifications
  */
-router.post('/fcm-token', async (req: any, res) => {
+router.post('/fcm-token', async (req: AuthenticatedRequest, res) => {
   try {
     const { fcmToken } = req.body;
     
@@ -85,7 +86,7 @@ router.post('/fcm-token', async (req: any, res) => {
     }
 
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -107,10 +108,10 @@ router.post('/fcm-token', async (req: any, res) => {
  * DELETE /api/user
  * Delete user account and all associated data
  */
-router.delete('/', async (req: any, res) => {
+router.delete('/', async (req: AuthenticatedRequest, res) => {
   try {
     // Note: password verification handled by Clerk
-    const clerkUserId = req.auth.userId;
+    const clerkUserId = req.auth!.userId;
 
     // Verify the user exists in our database
     const user = await db.query.users.findFirst({
@@ -188,10 +189,10 @@ router.delete('/', async (req: any, res) => {
  * GET /api/user/profile
  * Get current user profile
  */
-router.get('/profile', async (req: any, res) => {
+router.get('/profile', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -209,12 +210,12 @@ router.get('/profile', async (req: any, res) => {
  * PATCH /api/user/profile
  * Update user profile
  */
-router.patch('/profile', async (req: any, res) => {
+router.patch('/profile', async (req: AuthenticatedRequest, res) => {
   try {
     const updates = req.body;
     
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -240,10 +241,10 @@ router.patch('/profile', async (req: any, res) => {
  * GET /api/user/settings
  * Get user settings
  */
-router.get('/settings', async (req: any, res) => {
+router.get('/settings', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -272,12 +273,12 @@ router.get('/settings', async (req: any, res) => {
  * PATCH /api/user/settings
  * Update user settings
  */
-router.patch('/settings', async (req: any, res) => {
+router.patch('/settings', async (req: AuthenticatedRequest, res) => {
   try {
     const updates = req.body;
     
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {

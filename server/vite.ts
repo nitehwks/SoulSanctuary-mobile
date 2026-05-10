@@ -1,9 +1,10 @@
 import express from 'express';
-import { Express, Request, Response, NextFunction } from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
+import { logInfo } from './services/logger';
 
-export async function setupVite(app: Express, server: any) {
+export async function setupVite(app: Express, server: ReturnType<typeof import('http').createServer>) {
   const { createServer } = await import('vite');
   const vite = await createServer({
     server: { middlewareMode: true },
@@ -52,5 +53,5 @@ export function serveStatic(app: Express) {
 }
 
 export function log(message: string) {
-  console.log(message);
+  logInfo(message);
 }

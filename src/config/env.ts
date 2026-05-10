@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 // Environment configuration for the app
 // These values are embedded at build time by Vite
 
@@ -33,7 +35,7 @@ export function validateEnv() {
   );
   
   if (missing.length > 0) {
-    console.warn(
+    logger.warn(
       `Missing environment variables: ${missing.join(', ')}`
     );
   }

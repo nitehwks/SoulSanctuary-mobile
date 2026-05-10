@@ -1,5 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { logger } from './logger';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -20,7 +21,7 @@ async function getAuthToken(): Promise<string | null> {
         return freshToken;
       }
     } catch (error) {
-      console.warn('Could not get fresh Clerk token:', error);
+      logger.warn('Could not get fresh Clerk token', { error });
     }
   }
   

@@ -140,19 +140,24 @@ export const SENSITIVE_FIELDS = [
 /**
  * Sanitize sensitive data from objects before logging
  */
-export function sanitizeSensitiveData(obj: any): any {
-  if (!obj || typeof obj !== 'object') return obj;
+export function sanitizeSensitiveData(obj: unknown): unknown {
+  if (!obj || typeof obj !== 'object' || obj === null) return obj;
   
-  const sanitized = { ...obj };
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeSensitiveData(item));
+  }
+  
+  const sanitized: Record<string, unknown> = { ...(obj as Record<string, unknown>) };
   
   for (const key of Object.keys(sanitized)) {
     const lowerKey = key.toLowerCase();
+    const value = sanitized[key];
     
     // Check if key contains any sensitive field name
     if (SENSITIVE_FIELDS.some(field => lowerKey.includes(field.toLowerCase()))) {
       sanitized[key] = '[REDACTED]';
-    } else if (typeof sanitized[key] === 'object') {
-      sanitized[key] = sanitizeSensitiveData(sanitized[key]);
+    } else if (value !== null && typeof value === 'object') {
+      sanitized[key] = sanitizeSensitiveData(value);
     }
   }
   

@@ -7,7 +7,9 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { registerRoutes } from './routes';
-import { serveStatic, log } from './vite';
+import { serveStatic } from './vite';
+import { logWarn, logInfo } from './services/logger';
+import { getAllowedOrigins } from './config/security';
 import { notFoundHandler } from './middleware/error';
 
 const app = express();
@@ -76,16 +78,7 @@ app.use(helmet({
 // ==========================================
 // CORS Configuration
 // ==========================================
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'capacitor://localhost',
-      'ionic://localhost',
-      'https://soulsanctuary.app',
-      'https://www.soulsanctuary.app',
-    ];
+const allowedOrigins = getAllowedOrigins();
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -95,7 +88,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`CORS blocked origin: ${origin}`);
+      logWarn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -124,12 +117,12 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+  let capturedJsonResponse: Record<string, unknown> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson: any) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, arguments as any);
+  const originalResJson = res.json.bind(res);
+  res.json = function (bodyJson: unknown) {
+    capturedJsonResponse = bodyJson as Record<string, unknown>;
+    return originalResJson(bodyJson);
   };
 
   res.on('finish', () => {
@@ -142,7 +135,7 @@ app.use((req, res, next) => {
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + '…';
       }
-      log(logLine);
+      logInfo(logLine);
     }
   });
 
@@ -169,7 +162,7 @@ app.get('/health', (_req, res) => {
 // ==========================================
 (async () => {
   let server: any;
-  let vite: any;
+  let vite: Awaited<ReturnType<typeof import('vite').createServer>> | undefined;
   
   if (app.get('env') === 'development') {
     const { createServer } = await import('vite');
@@ -207,7 +200,7 @@ app.get('/health', (_req, res) => {
   app.use('/api', notFoundHandler);
 
   // Error handling middleware - MUST be last
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: Error & { status?: number; statusCode?: number }, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || 'Internal Server Error';
 
@@ -221,7 +214,9 @@ app.get('/health', (_req, res) => {
 
   // Start server
   const PORT = parseInt(process.env.PORT || '3001', 10);
-  server.listen(PORT, '0.0.0.0', () => {
-    log(`Server running on port ${PORT}`);
-  });
+  if (server) {
+    server.listen(PORT, '0.0.0.0', () => {
+      logInfo(`Server running on port ${PORT}`);
+    });
+  }
 })();

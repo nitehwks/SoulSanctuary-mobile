@@ -1,5 +1,6 @@
 import { Preferences } from '@capacitor/preferences';
 import { Network } from '@capacitor/network';
+import { logger } from '../utils/logger';
 
 const QUEUE_KEY = 'api_queue';
 const CACHE_PREFIX = 'cache_';
@@ -56,7 +57,7 @@ export async function queueRequest(
     value: JSON.stringify(queue),
   });
 
-  console.log(`Request queued: ${method} ${url}`);
+  logger.debug(`Request queued: ${method} ${url}`);
   return request.id;
 }
 
@@ -106,11 +107,11 @@ export async function processQueue(): Promise<{
   // Check if online
   const online = await isOnline();
   if (!online) {
-    console.log('Still offline, cannot process queue');
+    logger.debug('Still offline, cannot process queue');
     return { succeeded, failed };
   }
 
-  console.log(`Processing ${queue.length} queued requests...`);
+  logger.debug(`Processing ${queue.length} queued requests...`);
 
   for (const request of queue) {
     try {
@@ -123,7 +124,7 @@ export async function processQueue(): Promise<{
       if (response.ok) {
         await removeFromQueue(request.id);
         succeeded.push(request.id);
-        console.log(`Queued request succeeded: ${request.method} ${request.url}`);
+        logger.debug(`Queued request succeeded: ${request.method} ${request.url}`);
       } else {
         // Retry logic
         if (request.retries < 3) {
@@ -139,11 +140,11 @@ export async function processQueue(): Promise<{
           });
         } else {
           failed.push(request.id);
-          console.error(`Queued request failed after 3 retries: ${request.url}`);
+          logger.error(`Queued request failed after 3 retries: ${request.url}`);
         }
       }
     } catch (error) {
-      console.error(`Failed to process queued request: ${request.url}`, error);
+      logger.error(`Failed to process queued request: ${request.url}`, error);
       failed.push(request.id);
     }
   }
@@ -228,7 +229,7 @@ export async function smartFetch<T>(
               cacheData(cacheKey, data, cacheTtlMinutes);
             }
           })
-          .catch(console.error);
+          .catch((err) => logger.error('Failed to queue request', err));
       }
 
       return cached;
@@ -277,12 +278,12 @@ export async function initializeOfflineSupport(
 ): Promise<void> {
   // Listen for network status changes
   Network.addListener('networkStatusChange', (status) => {
-    console.log('Network status changed:', status.connected ? 'online' : 'offline');
+    logger.debug('Network status changed:', { connected: status.connected });
 
     if (status.connected) {
       // Process queue when coming back online
       processQueue().then((result) => {
-        console.log(`Processed ${result.succeeded} queued requests, ${result.failed} failed`);
+        logger.info(`Processed ${result.succeeded} queued requests, ${result.failed} failed`);
       });
     }
 
@@ -296,12 +297,12 @@ export async function initializeOfflineSupport(
   if (online) {
     const queue = await getQueuedRequests();
     if (queue.length > 0) {
-      console.log(`Found ${queue.length} queued requests, processing...`);
+      logger.debug(`Found ${queue.length} queued requests, processing...`);
       processQueue();
     }
   }
 
-  console.log('Offline support initialized');
+  logger.info('Offline support initialized');
 }
 
 /**

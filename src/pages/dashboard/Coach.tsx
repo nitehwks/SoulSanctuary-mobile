@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '../../utils/logger';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAI } from '../../hooks/useAI';
@@ -131,7 +132,7 @@ export default function Coach() {
       
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
-      console.error('Chat error:', error);
+      logger.error('Chat error', error);
       
       // Add error message
       const errorMsg: Message = {

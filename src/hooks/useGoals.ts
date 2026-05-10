@@ -5,7 +5,6 @@ import type { Goal, Milestone } from '../types';
 export function useGoals() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
-  const [_loading, _setLoading] = useState(false);
   const fetchGoals = useCallback(async () => {
     const data = await apiFetch('/goals');
     setGoals(data);

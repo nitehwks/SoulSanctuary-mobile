@@ -1,5 +1,6 @@
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '../utils/logger';
 import { processQueue, isOnline } from './offline';
 import { getScheduledNotifications } from './notifications';
 
@@ -9,14 +10,14 @@ import { getScheduledNotifications } from './notifications';
  */
 export async function initializeBackgroundSync(): Promise<void> {
   if (!Capacitor.isNativePlatform()) {
-    console.log('Background sync only available on native platforms');
+    logger.debug('Background sync only available on native platforms');
     return;
   }
 
   try {
     // Listen for app state changes
     App.addListener('appStateChange', async ({ isActive }) => {
-      console.log('SoulSanctuary state changed:', isActive ? 'active' : 'background');
+      logger.debug('SoulSanctuary state changed', { state: isActive ? 'active' : 'background' });
 
       if (isActive) {
         // SoulSanctuary came to foreground
@@ -29,19 +30,19 @@ export async function initializeBackgroundSync(): Promise<void> {
 
     // Listen for app resume (from killed state)
     App.addListener('resume', async () => {
-      console.log('SoulSanctuary resumed');
+      logger.debug('SoulSanctuary resumed');
       await handleAppResume();
     });
 
     // Listen for app pause
     App.addListener('pause', async () => {
-      console.log('SoulSanctuary paused');
+      logger.debug('SoulSanctuary paused');
       await handleAppPause();
     });
 
-    console.log('Background sync initialized');
+    logger.debug('Background sync initialized');
   } catch (error) {
-    console.error('Failed to initialize background sync:', error);
+    logger.error('Failed to initialize background sync', error);
   }
 }
 
@@ -57,7 +58,7 @@ async function handleAppForeground(): Promise<void> {
       // Process any queued API calls
       const result = await processQueue();
       if (result.succeeded.length > 0) {
-        console.log(`Synced ${result.succeeded.length} pending changes`);
+        logger.debug(`Synced ${result.succeeded.length} pending changes`);
       }
 
       // Refresh data from server
@@ -67,7 +68,7 @@ async function handleAppForeground(): Promise<void> {
     // Check for scheduled notifications that should have fired
     await checkScheduledNotifications();
   } catch (error) {
-    console.error('Error handling app foreground:', error);
+    logger.error('Error handling app foreground', error);
   }
 }
 
@@ -82,7 +83,7 @@ async function handleAppBackground(): Promise<void> {
     // Schedule any pending background tasks
     await scheduleBackgroundTasks();
   } catch (error) {
-    console.error('Error handling app background:', error);
+    logger.error('Error handling app background', error);
   }
 }
 
@@ -95,13 +96,13 @@ async function handleAppResume(): Promise<void> {
     const online = await isOnline();
     if (online) {
       const result = await processQueue();
-      console.log(`Processed ${result.succeeded.length} queued requests on resume`);
+      logger.debug(`Processed ${result.succeeded.length} queued requests on resume`);
     }
 
     // Refresh critical data
     await refreshCriticalData();
   } catch (error) {
-    console.error('Error handling app resume:', error);
+    logger.error('Error handling app resume', error);
   }
 }
 
@@ -113,7 +114,7 @@ async function handleAppPause(): Promise<void> {
     // Save current state
     await saveAppState();
   } catch (error) {
-    console.error('Error handling app pause:', error);
+    logger.error('Error handling app pause', error);
   }
 }
 
@@ -122,7 +123,7 @@ async function handleAppPause(): Promise<void> {
  */
 async function saveAppState(): Promise<void> {
   // Save any pending form data, scroll positions, etc.
-  console.log('SoulSanctuary state saved');
+  logger.debug('SoulSanctuary state saved');
 }
 
 /**
@@ -132,7 +133,7 @@ async function scheduleBackgroundTasks(): Promise<void> {
   // On iOS, this would use BGTaskScheduler
   // On Android, this would use WorkManager
   // For now, we rely on the offline queue
-  console.log('Background tasks scheduled');
+  logger.debug('Background tasks scheduled');
 }
 
 /**
@@ -157,13 +158,13 @@ async function refreshDataFromServer(): Promise<void> {
           await cacheData(endpoint, data);
         }
       } catch (error) {
-        console.error(`Failed to refresh ${endpoint}:`, error);
+        logger.error(`Failed to refresh ${endpoint}`, error);
       }
     }
 
-    console.log('Data refreshed from server');
+    logger.debug('Data refreshed from server');
   } catch (error) {
-    console.error('Failed to refresh data:', error);
+    logger.error('Failed to refresh data', error);
   }
 }
 
@@ -186,11 +187,11 @@ async function refreshCriticalData(): Promise<void> {
           await cacheData(endpoint, data);
         }
       } catch (error) {
-        console.error(`Failed to refresh ${endpoint}:`, error);
+        logger.error(`Failed to refresh ${endpoint}`, error);
       }
     }
   } catch (error) {
-    console.error('Failed to refresh critical data:', error);
+    logger.error('Failed to refresh critical data', error);
   }
 }
 
@@ -208,7 +209,7 @@ async function cacheData(key: string, data: any): Promise<void> {
       }),
     });
   } catch (error) {
-    console.error('Failed to cache data:', error);
+    logger.error('Failed to cache data', error);
   }
 }
 
@@ -223,10 +224,10 @@ async function checkScheduledNotifications(): Promise<void> {
     
     for (const notification of notifications) {
       // Show the notification
-      console.log('Showing missed notification:', notification.title);
+      logger.debug('Showing missed notification:', notification.title);
     }
   } catch (error) {
-    console.error('Failed to check scheduled notifications:', error);
+    logger.error('Failed to check scheduled notifications:', error);
   }
 }
 
@@ -247,7 +248,7 @@ export async function getCachedData(key: string): Promise<any | null> {
     }
     return null;
   } catch (error) {
-    console.error('Failed to get cached data:', error);
+    logger.error('Failed to get cached data:', error);
     return null;
   }
 }
@@ -266,9 +267,9 @@ export async function clearCachedData(): Promise<void> {
       }
     }
     
-    console.log('Cached data cleared');
+    logger.debug('Cached data cleared');
   } catch (error) {
-    console.error('Failed to clear cached data:', error);
+    logger.error('Failed to clear cached data:', error);
   }
 }
 
@@ -287,9 +288,9 @@ export async function performPeriodicSync(): Promise<void> {
     // Sync data
     await refreshDataFromServer();
 
-    console.log('Periodic sync completed');
+    logger.debug('Periodic sync completed');
   } catch (error) {
-    console.error('Periodic sync failed:', error);
+    logger.error('Periodic sync failed:', error);
   }
 }
 
@@ -299,13 +300,13 @@ export async function performPeriodicSync(): Promise<void> {
  */
 export async function handleBackgroundFetch(): Promise<void> {
   try {
-    console.log('Background fetch initiated');
+    logger.debug('Background fetch initiated');
     
     // Perform sync
     await performPeriodicSync();
     
-    console.log('Background fetch completed');
+    logger.debug('Background fetch completed');
   } catch (error) {
-    console.error('Background fetch failed:', error);
+    logger.error('Background fetch failed:', error);
   }
 }

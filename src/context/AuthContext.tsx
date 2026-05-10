@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
 import { Preferences } from '@capacitor/preferences';
 import type { UserResource } from '@clerk/types';
+import { logger } from '../utils/logger';
 
 // User type for our app
 interface User {
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(cachedToken);
       }
     } catch (error) {
-      console.error('Auth init error:', error);
+      logger.error('Auth init error', error);
     }
   };
 
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return newToken;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      logger.error('Token refresh error', error);
       return null;
     }
   };
@@ -123,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return freshToken;
       }
     } catch (error) {
-      console.warn('Could not get fresh token, using cached:', error);
+      logger.warn('Could not get fresh token, using cached', { error });
     }
     
     // Fallback to cached token
@@ -145,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const authToken = await getToken();
       if (!authToken) {
-        console.error('No auth token available');
+        logger.error('No auth token available');
         return;
       }
 
@@ -166,9 +167,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(`Sync failed: ${response.status}`);
       }
 
-      console.log('User synced with backend');
+      logger.info('User synced with backend');
     } catch (error) {
-      console.error('Failed to sync user with backend:', error);
+      logger.error('Failed to sync user with backend', error);
     }
   };
 

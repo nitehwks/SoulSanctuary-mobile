@@ -3,6 +3,7 @@ import { crisisEvents, users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { sendPushNotification, sendToMultipleUsers } from './notification';
 import { detectCrisis } from './ai';
+import { logInfo, logError } from './logger';
 
 interface CrisisAlert {
   isCrisis: boolean;
@@ -126,7 +127,7 @@ export async function notifyEmergencyContacts(
     });
 
     if (contacts.length === 0) {
-      console.log(`No emergency contacts found for user ${userId}`);
+      logInfo('No emergency contacts found for user', { userId });
       return;
     }
 
@@ -155,9 +156,9 @@ export async function notifyEmergencyContacts(
     // Send email if we had email service
     // await sendEmailToContacts(contacts, userName, severity);
 
-    console.log(`Emergency contacts notified for user ${userId}`);
+    logInfo('Emergency contacts notified for user', { userId });
   } catch (error) {
-    console.error('Failed to notify emergency contacts:', error);
+    logError('Failed to notify emergency contacts', error as Error);
     throw error;
   }
 }
@@ -227,7 +228,7 @@ export async function handleCrisisIntervention(
   // Notify emergency contacts for high/critical severity
   if (severity === 'high' || severity === 'critical') {
     await notifyEmergencyContacts(userId, severity).catch(err => {
-      console.error('Failed to notify emergency contacts:', err);
+      logError('Failed to notify emergency contacts', err);
     });
   }
 
@@ -242,7 +243,7 @@ export async function handleCrisisIntervention(
       timestamp: new Date().toISOString()
     }
   ).catch(err => {
-    console.error('Failed to send crisis notification:', err);
+    logError('Failed to send crisis notification', err);
   });
 
   return {

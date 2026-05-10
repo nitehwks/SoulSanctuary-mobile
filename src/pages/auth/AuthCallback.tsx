@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useClerk, useSignIn, useSignUp } from '@clerk/clerk-react';
+import { logger } from '../../utils/logger';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 /**
@@ -18,25 +19,26 @@ export default function AuthCallback() {
     // Handle the OAuth callback
     const handleCallback = async () => {
       try {
-        console.log('[AuthCallback] Processing OAuth callback...');
-        console.log('[AuthCallback] URL:', window.location.href);
+        logger.debug('[AuthCallback] Processing OAuth callback...');
+        logger.debug(`[AuthCallback] URL: ${window.location.href}`);
         
         // Wait for Clerk to be ready
         if (!isSignInLoaded || !isSignUpLoaded) {
-          console.log('[AuthCallback] Waiting for Clerk...');
+          logger.debug('[AuthCallback] Waiting for Clerk...');
           return;
         }
 
         // Handle the redirect from OAuth provider
+        // Let Clerk auto-detect the current URL; passing an incorrect
+        // redirectUrl can cause validation errors.
         await handleRedirectCallback({
           afterSignInUrl: '/',
           afterSignUpUrl: '/',
-          redirectUrl: '/',
         });
 
-        console.log('[AuthCallback] OAuth callback handled successfully');
+        logger.debug('[AuthCallback] OAuth callback handled successfully');
       } catch (err: any) {
-        console.error('[AuthCallback] Error:', err);
+        logger.error('[AuthCallback] Error', err);
         setError(err.message || 'Authentication failed. Please try again.');
       }
     };

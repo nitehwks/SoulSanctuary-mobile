@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, memo, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import type { MoodEntry, Goal, MemoryNode } from '../types';
 import { get } from '../utils/api';
@@ -51,7 +52,7 @@ export const SanctuaryProvider = memo(function SanctuaryProvider({ children }: S
       setActiveGoals(goals || []);
       setMemoryGraph(memories || []);
     } catch (error) {
-      console.error('Failed to refresh data:', error);
+      logger.error('Failed to refresh data', error);
     } finally {
       setIsLoading(false);
     }

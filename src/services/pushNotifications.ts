@@ -1,6 +1,7 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
+import { logger } from '../utils/logger';
 
 const FCM_TOKEN_KEY = 'fcm_token';
 
@@ -11,7 +12,7 @@ const FCM_TOKEN_KEY = 'fcm_token';
 export async function initializePushNotifications(): Promise<void> {
   // Only run on native platforms
   if (!Capacitor.isNativePlatform()) {
-    console.log('Push notifications only available on native platforms');
+    logger.debug('Push notifications only available on native platforms');
     return;
   }
 
@@ -20,7 +21,7 @@ export async function initializePushNotifications(): Promise<void> {
     const result = await PushNotifications.requestPermissions();
     
     if (result.receive !== 'granted') {
-      console.log('Push notification permission denied');
+      logger.debug('Push notification permission denied');
       return;
     }
 
@@ -30,9 +31,9 @@ export async function initializePushNotifications(): Promise<void> {
     // Set up listeners
     setupPushNotificationListeners();
 
-    console.log('Push notifications initialized');
+    logger.debug('Push notifications initialized');
   } catch (error) {
-    console.error('Failed to initialize push notifications:', error);
+    logger.error('Failed to initialize push notifications', error);
   }
 }
 
@@ -42,7 +43,7 @@ export async function initializePushNotifications(): Promise<void> {
 function setupPushNotificationListeners(): void {
   // Token received (on first register or token refresh)
   PushNotifications.addListener('registration', async (token) => {
-    console.log('Push registration token:', token.value);
+    logger.debug('Push registration token received', { token: token.value });
     
     // Save token locally
     await Preferences.set({
@@ -56,12 +57,12 @@ function setupPushNotificationListeners(): void {
 
   // Registration error
   PushNotifications.addListener('registrationError', (error) => {
-    console.error('Push registration error:', error);
+    logger.error('Push registration error', error);
   });
 
   // Notification received while app in foreground
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('Push notification received:', notification);
+    logger.debug('Push notification received', { notification });
     
     // Handle the notification
     handleForegroundNotification(notification);
@@ -69,7 +70,7 @@ function setupPushNotificationListeners(): void {
 
   // Notification action performed (user tapped notification)
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('Push notification action performed:', action);
+    logger.debug('Push notification action performed', { action });
     
     // Handle navigation based on notification type
     handleNotificationAction(action.notification);
@@ -93,9 +94,9 @@ async function registerTokenWithServer(token: string): Promise<void> {
       throw new Error('Failed to register FCM token');
     }
 
-    console.log('FCM token registered with server');
+    logger.debug('FCM token registered with server');
   } catch (error) {
-    console.error('Failed to register FCM token:', error);
+    logger.error('Failed to register FCM token', error);
   }
 }
 
@@ -114,18 +115,18 @@ function handleForegroundNotification(notification: any): void {
   switch (type) {
     case 'crisis':
       // Show urgent alert
-      console.log('CRISIS ALERT:', title, body);
+      logger.debug('CRISIS ALERT', { title, body });
       break;
     case 'goal':
       // Show goal reminder
-      console.log('GOAL REMINDER:', title, body);
+      logger.debug('GOAL REMINDER', { title, body });
       break;
     case 'mood':
       // Show mood check-in prompt
-      console.log('MOOD CHECK-IN:', title, body);
+      logger.debug('MOOD CHECK-IN', { title, body });
       break;
     default:
-      console.log('NOTIFICATION:', title, body);
+      logger.debug('NOTIFICATION', { title, body });
   }
 }
 
@@ -184,9 +185,9 @@ export async function unregisterPushNotifications(): Promise<void> {
     // Clear stored token
     await Preferences.remove({ key: FCM_TOKEN_KEY });
 
-    console.log('Push notifications unregistered');
+    logger.debug('Push notifications unregistered');
   } catch (error) {
-    console.error('Failed to unregister push notifications:', error);
+    logger.error('Failed to unregister push notifications', error);
   }
 }
 
@@ -210,7 +211,7 @@ export async function getPushNotificationStatus(): Promise<{
       isRegistered: !!token,
     };
   } catch (error) {
-    console.error('Failed to get push notification status:', error);
+    logger.error('Failed to get push notification status', error);
     return { hasPermission: false, isRegistered: false };
   }
 }
@@ -228,7 +229,7 @@ export async function requestPushPermission(): Promise<boolean> {
     const result = await PushNotifications.requestPermissions();
     return result.receive === 'granted';
   } catch (error) {
-    console.error('Failed to request push permission:', error);
+    logger.error('Failed to request push permission', error);
     return false;
   }
 }
@@ -244,7 +245,7 @@ export async function clearAllNotifications(): Promise<void> {
   try {
     await PushNotifications.removeAllDeliveredNotifications();
   } catch (error) {
-    console.error('Failed to clear notifications:', error);
+    logger.error('Failed to clear notifications', error);
   }
 }
 
@@ -260,7 +261,7 @@ export async function getDeliveredNotifications(): Promise<any[]> {
     const result = await PushNotifications.getDeliveredNotifications();
     return result.notifications;
   } catch (error) {
-    console.error('Failed to get delivered notifications:', error);
+    logger.error('Failed to get delivered notifications', error);
     return [];
   }
 }

@@ -1,5 +1,6 @@
 import { Card } from '../../components/ui/Card';
 import { useEffect, useState } from 'react';
+import { logger } from '../../utils/logger';
 import { apiFetch } from '../../utils/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, Calendar, Activity, Target, Flame } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function Analytics() {
         setEmotionData(emotions);
         setSummary(summaryData);
       } catch (error) {
-        console.error('Failed to fetch analytics:', error);
+        logger.error('Failed to fetch analytics', error);
       } finally {
         setLoading(false);
       }

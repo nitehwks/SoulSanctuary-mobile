@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { db } from '../db';
 import { moods, users } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -13,10 +14,10 @@ const router = Router();
  * GET /api/moods
  * Get user's mood history
  */
-router.get('/', async (req: any, res) => {
+router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -44,10 +45,10 @@ router.post(
   '/',
   writeRateLimiter,
   validateBody(createMoodSchema),
-  async (req: any, res) => {
+  async (req: AuthenticatedRequest, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.clerkId, req.auth.userId),
+        where: eq(users.clerkId, req.auth!.userId),
       });
 
       if (!user) {
@@ -81,10 +82,10 @@ router.patch(
   '/:id',
   writeRateLimiter,
   validateBody(updateMoodSchema),
-  async (req: any, res) => {
+  async (req: AuthenticatedRequest, res) => {
     try {
       const user = await db.query.users.findFirst({
-        where: eq(users.clerkId, req.auth.userId),
+        where: eq(users.clerkId, req.auth!.userId),
       });
 
       if (!user) {
@@ -119,10 +120,10 @@ router.patch(
  * DELETE /api/moods/:id
  * Delete mood entry
  */
-router.delete('/:id', writeRateLimiter, async (req: any, res) => {
+router.delete('/:id', writeRateLimiter, async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {

@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
+import { RATE_LIMITS } from '../config/security';
 
 /**
  * Create a rate limiter with custom options
@@ -38,8 +39,8 @@ function createRateLimiter(
  * 5 requests per minute
  */
 export const authRateLimiter = createRateLimiter(
-  5,
-  60 * 1000, // 1 minute
+  RATE_LIMITS.auth.max,
+  RATE_LIMITS.auth.windowMs,
   'Too many authentication attempts. Please try again later.'
 );
 
@@ -48,8 +49,8 @@ export const authRateLimiter = createRateLimiter(
  * 20 requests per hour
  */
 export const aiRateLimiter = createRateLimiter(
-  20,
-  60 * 60 * 1000, // 1 hour
+  RATE_LIMITS.ai.max,
+  RATE_LIMITS.ai.windowMs,
   'AI request limit reached. Please try again later.'
 );
 
@@ -68,8 +69,8 @@ export const writeRateLimiter = createRateLimiter(
  * 100 requests per minute
  */
 export const generalRateLimiter = createRateLimiter(
-  100,
-  60 * 1000, // 1 minute
+  RATE_LIMITS.general.max,
+  RATE_LIMITS.general.windowMs,
   'API rate limit exceeded. Please try again later.'
 );
 
@@ -78,8 +79,8 @@ export const generalRateLimiter = createRateLimiter(
  * 10 requests per minute
  */
 export const crisisRateLimiter = createRateLimiter(
-  10,
-  60 * 1000, // 1 minute
+  RATE_LIMITS.crisis.max,
+  RATE_LIMITS.crisis.windowMs,
   'Too many crisis alerts. If you need immediate help, please call 988.'
 );
 
@@ -88,7 +89,7 @@ export const crisisRateLimiter = createRateLimiter(
  * 1000 requests per hour
  */
 export const webhookRateLimiter = createRateLimiter(
-  1000,
-  60 * 60 * 1000, // 1 hour
+  RATE_LIMITS.webhook.max,
+  RATE_LIMITS.webhook.windowMs,
   'Webhook rate limit exceeded.'
 );

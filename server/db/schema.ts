@@ -1,5 +1,6 @@
 import { pgTable, uuid, varchar, text, integer, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { userSubscriptions } from './subscriptions';
 
 // ==========================================
 // Users
@@ -14,7 +15,7 @@ export const users = pgTable('users', {
   preferences: jsonb('preferences').default({}),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   moods: many(moods),
   goals: many(goals),
   memories: many(memories),
@@ -26,6 +27,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   meditationSessions: many(meditationSessions),
   journalEntries: many(journalEntries),
   candles: many(candles),
+  settings: one(userSettings, { fields: [users.id], references: [userSettings.userId] }),
+  subscription: one(userSubscriptions, { fields: [users.id], references: [userSubscriptions.userId] }),
 }));
 
 // ==========================================

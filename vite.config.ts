@@ -56,18 +56,9 @@ export default defineConfig({
   server: { 
     port: 3000, 
     host: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/health': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+    // NOTE: Proxy disabled - API routes are served directly by the Express backend.
+    // When running the backend server (npm run server:dev), all /api requests
+    // are handled by the same Express app, so no proxy is needed.
   },
   build: { 
     outDir: 'dist',

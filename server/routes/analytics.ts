@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { db } from '../db';
 import { moods, goals, memories, users } from '../db/schema';
 import { eq, sql, and, gte } from 'drizzle-orm';
+import { logError } from '../services/logger';
 
 const router = Router();
 
@@ -9,10 +11,10 @@ const router = Router();
  * GET /api/analytics/moods
  * Get 30-day mood trend data
  */
-router.get('/moods', async (req: any, res) => {
+router.get('/moods', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -39,7 +41,7 @@ router.get('/moods', async (req: any, res) => {
 
     res.json(data);
   } catch (error) {
-    console.error('Mood analytics error:', error);
+    logError('Mood analytics error', error as Error);
     res.status(500).json({ error: 'Failed to fetch mood analytics' });
   }
 });
@@ -48,10 +50,10 @@ router.get('/moods', async (req: any, res) => {
  * GET /api/analytics/summary
  * Get summary statistics for the dashboard
  */
-router.get('/summary', async (req: any, res) => {
+router.get('/summary', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -131,8 +133,8 @@ router.get('/summary', async (req: any, res) => {
       );
 
     const emotionCounts: Record<string, number> = {};
-    emotionData.forEach((entry: any) => {
-      const emotions = entry.emotions || [];
+    emotionData.forEach((entry) => {
+      const emotions = (entry.emotions as string[] | null) || [];
       emotions.forEach((emotion: string) => {
         emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
       });
@@ -154,7 +156,7 @@ router.get('/summary', async (req: any, res) => {
       topEmotions: topEmotions,
     });
   } catch (error) {
-    console.error('Summary analytics error:', error);
+    logError('Summary analytics error', error as Error);
     res.status(500).json({ error: 'Failed to fetch summary analytics' });
   }
 });
@@ -163,10 +165,10 @@ router.get('/summary', async (req: any, res) => {
  * GET /api/analytics/emotions
  * Get emotion distribution
  */
-router.get('/emotions', async (req: any, res) => {
+router.get('/emotions', async (req: AuthenticatedRequest, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.auth.userId),
+      where: eq(users.clerkId, req.auth!.userId),
     });
 
     if (!user) {
@@ -189,8 +191,8 @@ router.get('/emotions', async (req: any, res) => {
       );
 
     const emotionCounts: Record<string, number> = {};
-    emotionData.forEach((entry: any) => {
-      const emotions = entry.emotions || [];
+    emotionData.forEach((entry) => {
+      const emotions = (entry.emotions as string[] | null) || [];
       emotions.forEach((emotion: string) => {
         emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
       });
@@ -203,7 +205,7 @@ router.get('/emotions', async (req: any, res) => {
 
     res.json(chartData);
   } catch (error) {
-    console.error('Emotion analytics error:', error);
+    logError('Emotion analytics error', error as Error);
     res.status(500).json({ error: 'Failed to fetch emotion analytics' });
   }
 });
@@ -232,7 +234,7 @@ async function calculateStreak(userId: string): Promise<number> {
     currentDate.setHours(0, 0, 0, 0);
 
     // Check if there's an entry for today or yesterday to start the streak
-    const dateStrings = moodDates.map((d: any) => d.date);
+    const dateStrings = moodDates.map((d) => d.date);
     const todayStr = currentDate.toISOString().split('T')[0];
     
     const yesterday = new Date(currentDate);
@@ -265,7 +267,7 @@ async function calculateStreak(userId: string): Promise<number> {
 
     return streak;
   } catch (error) {
-    console.error('Failed to calculate streak:', error);
+    logError('Failed to calculate streak', error as Error);
     return 0;
   }
 }

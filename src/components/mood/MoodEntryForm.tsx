@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '../../utils/logger';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { MoodSlider } from '../ui/MoodSlider';
@@ -50,7 +51,7 @@ export function MoodEntryForm() {
       // Hide success after 3 seconds
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      console.error('Failed to submit mood:', err);
+      logger.error('Failed to submit mood', err);
       // Error is handled by the hook and displayed below
     }
   };

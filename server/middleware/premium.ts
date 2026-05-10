@@ -284,7 +284,8 @@ export async function resetMonthlyAIUsage(): Promise<void> {
       .set({ 
         monthlyAIUsage: 0,
         updatedAt: new Date(),
-      });
+      })
+      .where(eq(userSubscriptions.status, 'active'));
   } catch (error) {
     logError('Reset monthly AI usage error', error as Error);
   }

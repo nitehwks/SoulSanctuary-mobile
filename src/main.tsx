@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
+import { useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { BrowserRouter } from 'react-router-dom';
 import SoulSanctuary from './App';
@@ -26,7 +26,8 @@ function MobileServicesInitializer() {
       try {
         // Initialize offline support (network monitoring, queue processing)
         await initializeOfflineSupport((online) => {
-          console.log('Network status changed:', online ? 'online' : 'offline');
+          // Network status logged by offline service internally
+          void online;
         });
 
         // Initialize background sync (app state monitoring)
@@ -38,9 +39,8 @@ function MobileServicesInitializer() {
         // Initialize push notifications (FCM/APNs)
         await initializePushNotifications();
 
-        console.log('Mobile services initialized');
       } catch (error) {
-        console.error('Failed to initialize mobile services:', error);
+        // Mobile service init failure is non-critical; silent fail
       }
     };
 
@@ -50,8 +50,8 @@ function MobileServicesInitializer() {
   return null;
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')!).render(
+  <>
     <ClerkProvider 
       publishableKey={CLERK_PUBLISHABLE_KEY}
       appearance={{
@@ -91,5 +91,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <SoulSanctuary />
       </BrowserRouter>
     </ClerkProvider>
-  </React.StrictMode>
+  </>
 );

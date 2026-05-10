@@ -1,5 +1,6 @@
 import { memo, useState, useEffect, useCallback } from 'react';
 import { Menu, Bell, Cross, X } from 'lucide-react';
+import { logger } from '../../utils/logger';
 import { UserButton } from '@clerk/clerk-react';
 import { useSanctuary } from '../../context/SanctuaryContext';
 import { useLayout } from './LayoutContext';
@@ -23,7 +24,6 @@ export const NavBar = memo(function NavBar() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -31,7 +31,7 @@ export const NavBar = memo(function NavBar() {
       setNotifications(data || []);
       setUnreadCount((data || []).filter((n: Notification) => !n.read).length);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      logger.error('Failed to fetch notifications', error);
     }
   }, [api]);
 
@@ -49,7 +49,7 @@ export const NavBar = memo(function NavBar() {
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      logger.error('Failed to mark notification as read', error);
     }
   };
 
@@ -59,7 +59,7 @@ export const NavBar = memo(function NavBar() {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      logger.error('Failed to mark all notifications as read', error);
     }
   };
 
@@ -150,9 +150,7 @@ export const NavBar = memo(function NavBar() {
                     </div>
                   </div>
 
-                  {isLoading ? (
-                    <div className="p-4 text-center text-sanctuary-cream/50">Loading...</div>
-                  ) : notifications.length === 0 ? (
+                  {notifications.length === 0 ? (
                     <div className="p-4 text-center text-sanctuary-cream/50">No notifications yet</div>
                   ) : (
                     <div className="divide-y divide-white/10">
